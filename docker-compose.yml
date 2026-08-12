@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: book_advisor_db
+    environment:
+      POSTGRES_USER: bookadmin
+      POSTGRES_PASSWORD: bookpass
+      POSTGRES_DB: bookadvisor
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
