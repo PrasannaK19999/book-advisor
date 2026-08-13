@@ -15,3 +15,9 @@ class BookResponse(BaseModel):    # outgoing — what the API returns
     description: str | None = None
 
     model_config = {"from_attributes": True}
+
+class EnquiryResponse(BaseModel):
+    book_id: int
+    name: str
+    skills: list[str]
+    careers: list[str]

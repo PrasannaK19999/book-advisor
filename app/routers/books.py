@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.book import Book
 from app.schemas.book import BookRequest, BookResponse
+from app.schemas.book import BookRequest, BookResponse, EnquiryResponse
+from app.services.llm import analyze_book
 
 router = APIRouter(prefix="/books", tags=["Books"])
 
@@ -31,3 +33,21 @@ def get_book(book_id: int, db: Session = Depends(get_db)):
     if book is None:
         raise HTTPException(status_code=404, detail="Book not found")
     return book
+
+@router.post("/{book_id}/enquire", response_model=EnquiryResponse)
+def enquire_book(book_id: int, db: Session = Depends(get_db)):
+    book = db.query(Book).filter(Book.id == book_id).first()
+    if book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    if not book.description:
+        raise HTTPException(status_code=400, detail="Book has no description to analyze")
+
+    result = analyze_book(book.name, book.description)
+
+    return EnquiryResponse(
+        book_id=book.id,
+        name=book.name,
+        skills=result["skills"],
+        careers=result["careers"],
+    )
