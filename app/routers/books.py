@@ -7,6 +7,9 @@ from app.schemas.book import BookRequest, BookResponse
 from app.schemas.book import BookRequest, BookResponse, EnquiryResponse
 from app.services.llm import analyze_book
 
+from app.security import get_current_user
+from app.models.user import User
+
 router = APIRouter(prefix="/books", tags=["Books"])
 
 
@@ -35,7 +38,11 @@ def get_book(book_id: int, db: Session = Depends(get_db)):
     return book
 
 @router.post("/{book_id}/enquire", response_model=EnquiryResponse)
-def enquire_book(book_id: int, db: Session = Depends(get_db)):
+def enquire_book(
+    book_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     book = db.query(Book).filter(Book.id == book_id).first()
     if book is None:
         raise HTTPException(status_code=404, detail="Book not found")
