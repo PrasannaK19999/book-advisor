@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import logging
+from app.routers import books, auth, recommend_books
 
 from app.database import Base, engine
 from app.routers import books, auth
@@ -15,6 +16,7 @@ app = FastAPI(title="Book Advisor API")
 
 app.include_router(books.router)
 app.include_router(auth.router)
+app.include_router(recommend_books.router)
 
 @app.get("/")
 def read_books():
