@@ -21,3 +21,10 @@ class EnquiryResponse(BaseModel):
     name: str
     skills: list[str]
     careers: list[str]
+
+class RecommendResponse(BaseModel):
+    query: str
+    recommendation: str
+    books: list[BookResponse]
+
+    model_config = {"from_attributes": True}
