@@ -1,65 +1,42 @@
-# # Book Advisor — AI Career Guidance from Real Books # # 
+# AI-Powered Book Advisor # 
 
-An AI-powered book and course advisor backend. Users browse a catalog of real books by category, and an LLM analyzes each book's description to surface the concrete skills a reader will gain and the career paths those skills open.
+This is a book recommendation API for people figuring out what to learn for their careers. Describe what you're aiming for, and it finds relevant books from the catalog using semantic search. Pick any book and it'll also break down the skills you'll pick up and the kind of jobs it can lead to.
 
-Built with FastAPI, PostgreSQL, and Groq's LLM API — fully containerized with Docker.
+## Features
+- Semantic search over the catalog (embeddings + pgvector)
+- Career-goal recommendations, grounded in real books
+- Skill & career analysis for any book
+- Honest out-of-domain handling — returns nothing when no book fits
+- JWT-secured, Dockerized
 
-What it does
-Browse a real catalog of books, organized by category (IT, Finance, Design), seeded from the Google Books API.
-Enquire about any book — a single authenticated endpoint sends the book's stored description to an LLM, which returns structured skills and careers as JSON.
-Secure access — registration and login with JWT authentication and bcrypt-hashed passwords. The AI endpoint is protected; only logged-in users can use it.
+## How It Works
+Book descriptions are embedded into vectors (all-MiniLM-L6-v2) and stored in Postgres via pgvector. A query is embedded the same way, and cosine similarity finds the closest books. A tuned distance threshold filters out weak matches, so irrelevant queries return nothing instead of noise. The retrieved books are passed to an LLM (Groq) that writes a recommendation grounded strictly in that real data — no invented titles.
 
-Grounded analysis, by design. The LLM analyzes only the book description provided to it — it extracts skills and careers from real stored text rather than recalling or guessing from memory. This keeps outputs factual and defensible.
-A future update will integrate a RAG pipeline and an agentic system to deepen this grounding — retrieving richer source material so the analysis becomes more thorough while remaining fact-based.
+The skill/career analysis works the same way: the LLM only reads a book's stored description and extracts skills and career paths from it, rather than guessing from memory.
 
-Tech stack
-Layer	Technology
-API framework	FastAPI
-Database	PostgreSQL
-ORM	SQLAlchemy
-Validation	Pydantic
-Auth	JWT (python-jose) + bcrypt (passlib)
-External calls	httpx (Google Books), Groq SDK (LLM)
-Containerization	Docker + docker-compose
-Architecture
+## Tech Stack
+Python · FastAPI · PostgreSQL + pgvector · SQLAlchemy · Groq (LLM) · sentence-transformers · Docker · JWT
 
-The project follows a clean separation of concerns:
+## API Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET`  | `/recommend` | Semantic book recommendations for a career goal |
+| `GET`  | `/books` | List books (optional category filter) |
+| `POST` | `/books/{id}/enquire` | AI skill & career analysis for a book (auth required) |
+| `POST` | `/auth/register`, `/auth/login` | User auth (JWT) |
 
-#app/ main.py       
-App entry point — wires routers together 
-#database.py        
-DB connection and session management
-#security.py        
-Password hashing, JWT creation/verification, auth dependency
-# models/            SQLAlchemy models (database tables)
-  book.py
-  user.py
-# schemas/          Pydantic schemas (API request/response shapes)
-  book.py
-  user.py
-# routers/          Endpoints grouped by feature
-  books.py
-  auth.py
-# services/
-  llm.py           
-# seed.py            
-Populates the catalog from the Google Books API
+## Running Locally
 
-Models vs. schemas are kept separate on purpose: models describe how data lives in the database, schemas describe what crosses the API boundary. For example, the DB owns each book's id, 
-so it appears in responses but is never accepted in requests.
+Requires Docker and a `.env` file with `GROQ_API_KEY`, `GOOGLE_BOOKS_API_KEY`, and `JWT_SECRET_KEY`.
 
-Example enquire response :
+```bash
+# Start the app + database
+docker compose up -d --build
 
-Json
-{
-  "book_id": 1,
-  "name": "Software Engineering",
-  "skills": ["Software Development", "Project Management", "Quality Assurance"],
-  "careers": ["Software Engineer", "IT Project Manager", "Quality Assurance Engineer"]
-}
+# Seed the catalog from Google Books
+python seed.py
 
-Exploring Further  :
-  * Semantic search over the catalog (embeddings + pgvector).
-  * Retrieval-augmented Q&A — ask free-form questions about any book.
-  * Personalized recommendations based on a user's stated career goal.
-  * Enquiry history and result caching to reduce repeat LLM calls.
+# Generate embeddings for the catalog
+python embed_books.py
+```
+API docs available at `http://localhost:8000/docs`.
